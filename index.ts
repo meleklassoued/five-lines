@@ -17,43 +17,12 @@ enum Tile {
   LOCK2,
 }
 
-enum Input {
+enum RawInput {
   UP,
   DOWN,
   LEFT,
   RIGHT,
 }
-
-let playerx = 1;
-let playery = 1;
-let map: Tile[][] = [
-  [2, 2, 2, 2, 2, 2, 2, 2],
-  [2, 3, 0, 1, 1, 2, 0, 2],
-  [2, 4, 2, 6, 1, 2, 0, 2],
-  [2, 8, 4, 1, 1, 2, 0, 2],
-  [2, 4, 1, 1, 1, 9, 0, 2],
-  [2, 2, 2, 2, 2, 2, 2, 2],
-];
-
-let inputs: Input[] = [];
-
-function remove(tile: Tile) {
-  for (let y = 0; y < map.length; y++) {
-    for (let x = 0; x < map[y].length; x++) {
-      if (map[y][x] === tile) {
-        map[y][x] = Tile.AIR;
-      }
-    }
-  }
-}
-
-function moveToTile(newx: number, newy: number) {
-  map[playery][playerx] = Tile.AIR;
-  map[newy][newx] = Tile.PLAYER;
-  playerx = newx;
-  playery = newy;
-}
-
 function moveHorizontal(dx: number) {
   if (
     map[playery][playerx + dx] === Tile.FLUX ||
@@ -91,37 +60,125 @@ function moveVertical(dy: number) {
     moveToTile(playerx, playery + dy);
   }
 }
-
-function update() {
-  while (inputs.length > 0) {
-    let current = inputs.pop();
-    if (current === Input.LEFT) moveHorizontal(-1);
-    else if (current === Input.RIGHT) moveHorizontal(1);
-    else if (current === Input.UP) moveVertical(-1);
-    else if (current === Input.DOWN) moveVertical(1);
+interface Input {
+  isRight(): boolean;
+  isLeft(): boolean;
+  isUp(): boolean;
+  isDown(): boolean;
+  handle(): void;
+}
+class Right implements Input {
+  isRight: () => true;
+  isLeft: () => false;
+  isUp: () => false;
+  isDown: () => false;
+  handle() {
+    moveHorizontal(1);
   }
+}
 
-  for (let y = map.length - 1; y >= 0; y--) {
+class Left implements Input {
+  isRight: () => false;
+  isLeft: () => true;
+  isUp: () => false;
+  isDown: () => false;
+  handle() {
+    moveHorizontal(-1);
+  }
+}
+class Up implements Input {
+  isRight: () => false;
+  isLeft: () => false;
+  isUp: () => true;
+  isDown: () => false;
+  handle() {
+    moveVertical(1);
+  }
+}
+
+class Down implements Input {
+  isRight: () => false;
+  isLeft: () => false;
+  isUp: () => false;
+  isDown: () => true;
+  handle() {
+    moveVertical(-1);
+  }
+}
+
+let playerx = 1;
+let playery = 1;
+let map: Tile[][] = [
+  [2, 2, 2, 2, 2, 2, 2, 2],
+  [2, 3, 0, 1, 1, 2, 0, 2],
+  [2, 4, 2, 6, 1, 2, 0, 2],
+  [2, 8, 4, 1, 1, 2, 0, 2],
+  [2, 4, 1, 1, 1, 9, 0, 2],
+  [2, 2, 2, 2, 2, 2, 2, 2],
+];
+
+let inputs: Input[] = [];
+
+function remove(tile: Tile) {
+  for (let y = 0; y < map.length; y++) {
     for (let x = 0; x < map[y].length; x++) {
-      if (
-        (map[y][x] === Tile.STONE || map[y][x] === Tile.FALLING_STONE) &&
-        map[y + 1][x] === Tile.AIR
-      ) {
-        map[y + 1][x] = Tile.FALLING_STONE;
+      if (map[y][x] === tile) {
         map[y][x] = Tile.AIR;
-      } else if (
-        (map[y][x] === Tile.BOX || map[y][x] === Tile.FALLING_BOX) &&
-        map[y + 1][x] === Tile.AIR
-      ) {
-        map[y + 1][x] = Tile.FALLING_BOX;
-        map[y][x] = Tile.AIR;
-      } else if (map[y][x] === Tile.FALLING_STONE) {
-        map[y][x] = Tile.STONE;
-      } else if (map[y][x] === Tile.FALLING_BOX) {
-        map[y][x] = Tile.BOX;
       }
     }
   }
+}
+
+function moveToTile(newx: number, newy: number) {
+  map[playery][playerx] = Tile.AIR;
+  map[newy][newx] = Tile.PLAYER;
+  playerx = newx;
+  playery = newy;
+}
+
+function handleInput(input: Input) {
+  input.handle();
+}
+
+function handleInputs() {
+  while (inputs.length > 0) {
+    let input = inputs.pop();
+
+    handleInput(input);
+  }
+}
+
+function updateTile(x: number, y: number) {
+  if (
+    (map[y][x] === Tile.STONE || map[y][x] === Tile.FALLING_STONE) &&
+    map[y + 1][x] === Tile.AIR
+  ) {
+    map[y + 1][x] = Tile.FALLING_STONE;
+    map[y][x] = Tile.AIR;
+  } else if (
+    (map[y][x] === Tile.BOX || map[y][x] === Tile.FALLING_BOX) &&
+    map[y + 1][x] === Tile.AIR
+  ) {
+    map[y + 1][x] = Tile.FALLING_BOX;
+    map[y][x] = Tile.AIR;
+  } else if (map[y][x] === Tile.FALLING_STONE) {
+    map[y][x] = Tile.STONE;
+  } else if (map[y][x] === Tile.FALLING_BOX) {
+    map[y][x] = Tile.BOX;
+  }
+}
+
+function updateMap() {
+  for (let y = map.length - 1; y >= 0; y--) {
+    for (let x = 0; x < map[y].length; x++) {
+      updateTile(x, y);
+    }
+  }
+}
+
+function update() {
+  handleInputs();
+  updateMap();
 }
 
 function min(result: number, x: number, y: number, arr: number[][]) {
@@ -160,12 +217,15 @@ function drawPlayer(g: CanvasRenderingContext2D) {
   g.fillRect(playerx * TILE_SIZE, playery * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 }
 
-function draw() {
+function createGraphics() {
   let canvas = document.getElementById("GameCanvas") as HTMLCanvasElement;
   let g = canvas.getContext("2d");
-
   g.clearRect(0, 0, canvas.width, canvas.height);
+  return g;
+}
 
+function draw() {
+  let g = createGraphics();
   drawMap(g);
   drawPlayer(g);
 }
@@ -189,8 +249,17 @@ const UP_KEY = "ArrowUp";
 const RIGHT_KEY = "ArrowRight";
 const DOWN_KEY = "ArrowDown";
 window.addEventListener("keydown", (e) => {
-  if (e.key === LEFT_KEY || e.key === "a") inputs.push(Input.LEFT);
-  else if (e.key === UP_KEY || e.key === "w") inputs.push(Input.UP);
-  else if (e.key === RIGHT_KEY || e.key === "d") inputs.push(Input.RIGHT);
-  else if (e.key === DOWN_KEY || e.key === "s") inputs.push(Input.DOWN);
+  if (e.key === LEFT_KEY || e.key === "a") inputs.push(new Left());
+  else if (e.key === UP_KEY || e.key === "w") inputs.push(new Up());
+  else if (e.key === RIGHT_KEY || e.key === "d") inputs.push(new Right());
+  else if (e.key === DOWN_KEY || e.key === "s") inputs.push(new Down());
 });
+
+// before :
+enum RawTrafficLight {
+  RED,
+  YELLOW,
+  GREEN,
+}
+
+// after
