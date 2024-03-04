@@ -143,8 +143,7 @@ function handleInput(input: Input) {
 function handleInputs() {
   while (inputs.length > 0) {
     let input = inputs.pop();
-
-    handleInput(input);
+    input.handle();
   }
 }
 
@@ -254,12 +253,3 @@ window.addEventListener("keydown", (e) => {
   else if (e.key === RIGHT_KEY || e.key === "d") inputs.push(new Right());
   else if (e.key === DOWN_KEY || e.key === "s") inputs.push(new Down());
 });
-
-// before :
-enum RawTrafficLight {
-  RED,
-  YELLOW,
-  GREEN,
-}
-
-// after

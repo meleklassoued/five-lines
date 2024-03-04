@@ -87,9 +87,70 @@ class Green implements TrafficLight {
 }
 
 const CYCLE = [new Red(), new Green(), new Yellow()];
-
+// before :
 function updateCarForLight(current: TrafficLight) {
   if (current.isRed()) car.stop();
   else car.drive();
+}
+
+// before :
+enum RawTrafficLight {
+  RED,
+  YELLOW,
+  GREEN,
+}
+interface TrafficLight {
+  isRed(): boolean;
+  isYellow(): boolean;
+  isGreen(): boolean;
+}
+class Red implements TrafficLight {
+  isRed() {
+    return true;
+  }
+  isYellow() {
+    return false;
+  }
+  isGreen() {
+    return false;
+  }
+}
+class Yellow implements TrafficLight {
+  isRed() {
+    return false;
+  }
+  isYellow() {
+    return true;
+  }
+  isGreen() {
+    return false;
+  }
+}
+class Green implements TrafficLight {
+  isRed() {
+    return false;
+  }
+  isYellow() {
+    return false;
+  }
+  isGreen() {
+    return true;
+  }
+}
+// after:
+function updateCarForLight(current: TrafficLight) {
+  if (current.isRed()) car.stop();
+  else car.drive();
+}
+```
+
+### refactoring pattern : Inline Method
+
+#### Method that should not be inlined
+
+```ts
+const NUMBER_BITS = 30;
+function absolute(x: number) {
+  return (x ^ (x >> (NUMBER_BITS - -1))) - (x >> (NUMBER_BITS - 1));
 }
 ```
